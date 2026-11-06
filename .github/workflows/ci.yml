@@ -1,0 +1,330 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Keep the TGZ compatible with the oldest supported Ubuntu runtime.
+          - os: ubuntu-22.04
+            name: Linux (GCC)
+          - os: windows-latest
+            name: Windows (MSVC)
+          - os: macos-latest
+            name: macOS (Universal)
+
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Configure
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DCONTACTGLOVE_MACOS_UNIVERSAL=ON
+          else
+            cmake -B build -DCMAKE_BUILD_TYPE=Release
+          fi
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Test native runtime and protocol regressions
+        run: |
+          cmake --build build --config Release --target runtime_regression protocol_v2_validation c_sample_regression
+          ctest --test-dir build -C Release --output-on-failure --verbose
+
+      # Windows packages ship ContactGloveSDKv2d.dll for MSVC Debug consumers.
+      - name: Build and test Debug SDK
+        if: runner.os == 'Windows'
+        run: |
+          cmake --build build --config Debug
+          cmake --build build --config Debug --target runtime_regression protocol_v2_validation c_sample_regression
+          ctest --test-dir build -C Debug --output-on-failure --verbose
+          python tools/smoke_basic_usage.py build/Debug/contactglove-basic-usage.exe
+
+      - name: Build sender-port integration test
+        run: cmake --build build --config Release --target sender_port_integration
+
+      - name: Test persistent configured sender port
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            exe="build/Release/sender_port_integration.exe"
+          else
+            exe="build/sender_port_integration"
+          fi
+          python tools/test_sender_port.py "$exe"
+          python tools/test_sender_port.py "$exe" --send-port 0
+
+      - name: Smoke basic_usage sample
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            exe="build/Release/contactglove-basic-usage.exe"
+          else
+            exe="build/contactglove-basic-usage"
+          fi
+          python tools/smoke_basic_usage.py "$exe"
+
+      - name: Smoke C ABI sample
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            exe="build/Release/contactglove-c-basic-usage.exe"
+          else
+            exe="build/contactglove-c-basic-usage"
+          fi
+          python tools/smoke_basic_usage.py "$exe"
+
+      - name: Install
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cmake --install build --config Debug --prefix dist/install
+          fi
+          cmake --install build --config Release --prefix dist/install
+
+      - name: Verify installed license documents and README links
+        run: python tools/verify_distribution_licenses.py dist/install
+
+      - name: Verify README reinstallation
+        run: python tools/test_readme_reinstall.py build
+
+      - name: Build Rust example from a writable workspace copy
+        run: python tools/test_rust_readonly_setup.py dist/install
+
+      - name: Test bundled Rust binding
+        shell: bash
+        run: |
+          export CONTACTGLOVE_SDK_ROOT="$GITHUB_WORKSPACE/dist/install"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            export PATH="$CONTACTGLOVE_SDK_ROOT/bin:$PATH"
+            example="bindings/rust/target/debug/examples/basic_usage.exe"
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            export DYLD_LIBRARY_PATH="$CONTACTGLOVE_SDK_ROOT/lib:${DYLD_LIBRARY_PATH:-}"
+            example="bindings/rust/target/debug/examples/basic_usage"
+          else
+            export LD_LIBRARY_PATH="$CONTACTGLOVE_SDK_ROOT/lib:${LD_LIBRARY_PATH:-}"
+            example="bindings/rust/target/debug/examples/basic_usage"
+          fi
+          cargo fmt --all --manifest-path bindings/rust/Cargo.toml --check
+          cargo test --manifest-path bindings/rust/Cargo.toml --workspace
+          cargo build --manifest-path bindings/rust/Cargo.toml -p contactglove-sdk-v2 --example basic_usage
+          python tools/smoke_basic_usage.py "$example"
+
+      - name: Package
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            (cd build && cpack -C "Debug;Release")
+          else
+            cmake --build build --config Release --target package
+          fi
+
+      - name: Verify Windows Debug/Release package
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          packages=(build/ContactGloveSDKv2Cpp-*-Windows-*.zip)
+          test "${#packages[@]}" -eq 1
+          python tools/verify_windows_package.py "${packages[0]}"
+
+      - name: Verify macOS Universal package
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          packages=(build/ContactGloveSDKv2Cpp-*-macOS-universal.tar.gz)
+          test "${#packages[@]}" -eq 1
+          bash tools/verify_macos_package.sh "${packages[0]}"
+
+      - name: Stage distribution package
+        shell: bash
+        run: |
+          shopt -s nullglob
+          packages=(build/ContactGloveSDKv2Cpp-*)
+          test "${#packages[@]}" -eq 1
+          python tools/verify_distribution_licenses.py "${packages[0]}"
+          cp "${packages[0]}" dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ContactGloveSDKv2Cpp-${{ runner.os }}
+          path: |
+            dist/ContactGloveSDKv2Cpp-*
+            dist/install/**
+
+  static:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest, macos-latest]
+
+    name: Static library (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCONTACTGLOVE_BUILD_STATIC=ON
+
+      - name: Build and test Release
+        run: |
+          cmake --build build --config Release
+          cmake --build build --config Release --target runtime_regression protocol_v2_validation c_sample_regression
+          ctest --test-dir build -C Release --output-on-failure
+
+      # Windows consumers link ContactGloveSDKv2d.lib from MSVC Debug builds.
+      - name: Build and test Debug
+        if: runner.os == 'Windows'
+        run: |
+          cmake --build build --config Debug
+          cmake --build build --config Debug --target runtime_regression protocol_v2_validation c_sample_regression
+          ctest --test-dir build -C Debug --output-on-failure
+
+      - name: Install
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cmake --install build --config Debug --prefix dist/static-install
+          fi
+          cmake --install build --config Release --prefix dist/static-install
+
+      - name: Build and smoke downstream static consumers
+        shell: bash
+        run: |
+          python tools/test_static_consumer.py dist/static-install --config Release
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            python tools/test_static_consumer.py dist/static-install --config Debug
+          fi
+
+  ubuntu-deb:
+    name: Ubuntu deb (${{ matrix.codename }})
+    runs-on: ubuntu-latest
+    container: ubuntu:${{ matrix.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: "22.04"
+            codename: jammy
+          - version: "24.04"
+            codename: noble
+
+    steps:
+      - name: Install build tools
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            cmake \
+            dpkg-dev \
+            file \
+            git \
+            python3
+
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: >
+          cmake -S . -B build-${{ matrix.codename }}
+          -DCMAKE_BUILD_TYPE=Release
+          -DCONTACTGLOVE_PACKAGE_DEB=ON
+          -DCONTACTGLOVE_DEB_DISTRIBUTION=${{ matrix.codename }}
+
+      - name: Build
+        run: cmake --build build-${{ matrix.codename }} --config Release
+
+      - name: Test native runtime and protocol regressions
+        run: |
+          cmake --build build-${{ matrix.codename }} --config Release --target runtime_regression protocol_v2_validation c_sample_regression
+          ctest --test-dir build-${{ matrix.codename }} -C Release --output-on-failure --verbose
+
+      - name: Test persistent configured sender port
+        run: |
+          cmake --build build-${{ matrix.codename }} --config Release --target sender_port_integration
+          python3 tools/test_sender_port.py build-${{ matrix.codename }}/sender_port_integration
+
+      - name: Smoke basic_usage sample
+        run: python3 tools/smoke_basic_usage.py build-${{ matrix.codename }}/contactglove-basic-usage
+
+      - name: Smoke C ABI sample
+        run: python3 tools/smoke_basic_usage.py build-${{ matrix.codename }}/contactglove-c-basic-usage
+
+      - name: Build deb package
+        run: cmake --build build-${{ matrix.codename }} --config Release --target package
+
+      - name: Verify installed deb with downstream CMake
+        shell: bash
+        run: |
+          shopt -s nullglob
+          debs=(build-${{ matrix.codename }}/contactglove-sdk-v2_*-0${{ matrix.codename }}_amd64.deb)
+          test "${#debs[@]}" -eq 1
+          python3 tools/verify_distribution_licenses.py "${debs[0]}"
+          bash tools/verify_deb_install.sh "${debs[0]}"
+          package_contents="$(mktemp)"
+          trap 'rm -f "$package_contents"' EXIT
+          dpkg-deb -c "${debs[0]}" > "$package_contents"
+          grep -q '/usr/include/contactglove/ContactGloveSDKv2C.h' "$package_contents"
+          grep -q '/usr/share/ContactGloveSDKv2/rust/Cargo.toml' "$package_contents"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: contactglove-sdk-v2-${{ matrix.codename }}-deb
+          path: build-${{ matrix.codename }}/contactglove-sdk-v2_*.deb
+
+  linux-package-compatibility:
+    name: Linux TGZ on Ubuntu ${{ matrix.version }}
+    needs: build
+    runs-on: ubuntu-latest
+    container: ubuntu:${{ matrix.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["22.04", "24.04"]
+    steps:
+      - name: Install verification tools
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential ca-certificates cmake git python3
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ContactGloveSDKv2Cpp-Linux
+          path: downloaded
+
+      - name: Verify actual Linux distribution
+        shell: bash
+        run: |
+          shopt -s nullglob
+          packages=(downloaded/ContactGloveSDKv2Cpp-*-Linux-x86_64.tar.gz)
+          test "${#packages[@]}" -eq 1
+          python3 tools/verify_distribution_licenses.py "${packages[0]}"
+          python3 tools/verify_linux_package.py "${packages[0]}"

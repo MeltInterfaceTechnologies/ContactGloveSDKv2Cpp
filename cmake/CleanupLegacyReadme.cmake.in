@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.20)
+
+# Remove only an unmodified README_EN.md installed by a known earlier SDK.
+# Preserve an unfamiliar or user-edited file instead of silently deleting it.
+set(legacy "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/@CONTACTGLOVE_SDK_DOCDIR@/README_EN.md")
+if(EXISTS "${legacy}")
+    file(READ "${legacy}" legacy_content)
+    string(REPLACE "\r\n" "\n" legacy_content "${legacy_content}")
+    string(SHA256 legacy_hash "${legacy_content}")
+    set(known_hashes
+        "1b0931fce222fbbb7f8078ad48434c818a6895656759f1182d8a214a05a85a36"
+        "744a7b06d8f7cc9ff8a7fdffa64a6c9c1b9d97e80f93ac524c7243cc58a799ac")
+    if(NOT legacy_hash IN_LIST known_hashes)
+        message(FATAL_ERROR "Existing ${legacy} is not a known unmodified SDK README. Move or remove it before reinstalling; it has not been modified.")
+    endif()
+    file(REMOVE "${legacy}")
+endif()

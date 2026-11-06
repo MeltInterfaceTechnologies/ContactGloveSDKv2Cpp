@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+members = [
+    "contactglove-sdk-v2-sys",
+    "contactglove-sdk-v2",
+]

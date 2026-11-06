@@ -1,0 +1,7 @@
+[project]
+name = "osc-test-server"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "python-osc>=1.8.0",
+]

@@ -1,0 +1,25 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/ContactGloveSDKv2Targets.cmake")
+
+# The C++ API passes std::string across the DLL boundary, so MSVC Debug
+# consumers must link the Debug SDK (ContactGloveSDKv2d.dll).
+if(MSVC AND TARGET ContactGloveSDKv2::ContactGloveSDKv2)
+    get_target_property(_contactglove_imported_configs
+        ContactGloveSDKv2::ContactGloveSDKv2 IMPORTED_CONFIGURATIONS)
+    if(NOT "DEBUG" IN_LIST _contactglove_imported_configs)
+        get_property(_contactglove_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+        if(_contactglove_multi_config OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+            message(WARNING
+                "ContactGloveSDKv2 was found without a Debug library. MSVC Debug "
+                "builds of C++ consumers will link the Release DLL and can crash "
+                "because the Debug and Release C++ runtimes are not ABI compatible. "
+                "Use an SDK package that contains ContactGloveSDKv2d.dll, or build "
+                "your application as Release or RelWithDebInfo.")
+        endif()
+        unset(_contactglove_multi_config)
+    endif()
+    unset(_contactglove_imported_configs)
+endif()
+
+check_required_components(ContactGloveSDKv2)

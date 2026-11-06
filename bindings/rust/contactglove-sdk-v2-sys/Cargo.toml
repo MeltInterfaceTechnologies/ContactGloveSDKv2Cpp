@@ -1,0 +1,12 @@
+[package]
+name = "contactglove-sdk-v2-sys"
+version = "1.0.0"
+edition = "2021"
+links = "ContactGloveSDKv2"
+description = "Generated C ABI bindings for ContactGlove C++/C/Rust SDK V2."
+license = "Apache-2.0"
+publish = false
+build = "build.rs"
+
+[lib]
+path = "src/lib.rs"

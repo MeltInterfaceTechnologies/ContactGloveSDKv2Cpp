@@ -1,0 +1,5 @@
+build*
+!bindings/rust/contactglove-sdk-v2-sys/build.rs
+.venv
+dist*
+!docs/BUILD*.md

@@ -1,0 +1,27 @@
+if(NOT DEFINED CPACK_TEMPORARY_DIRECTORY)
+    message(FATAL_ERROR "CPack staging directory is not defined")
+endif()
+
+# The archive has its own root README pair, and its installed documentation
+# needs links to archive-root rust/ rather than the normal install location.
+foreach(name README.md README_JA.md)
+    execute_process(
+        COMMAND "@CMAKE_COMMAND@" -E copy_if_different
+            "@CMAKE_CURRENT_BINARY_DIR@/readmes/archive-root/${name}"
+            "${CPACK_TEMPORARY_DIRECTORY}/${name}"
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+    execute_process(
+        COMMAND "@CMAKE_COMMAND@" -E copy_if_different
+            "@CMAKE_CURRENT_BINARY_DIR@/readmes/archive-doc/${name}"
+            "${CPACK_TEMPORARY_DIRECTORY}/@CONTACTGLOVE_SDK_DOCDIR@/${name}"
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+endforeach()
+
+file(REMOVE_RECURSE "${CPACK_TEMPORARY_DIRECTORY}/@CMAKE_INSTALL_DATAROOTDIR@/@PROJECT_NAME@/rust")
+file(COPY "@CMAKE_CURRENT_SOURCE_DIR@/bindings/rust/"
+    DESTINATION "${CPACK_TEMPORARY_DIRECTORY}/rust"
+    PATTERN "target" EXCLUDE
+    PATTERN ".gitignore" EXCLUDE
+)

@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.20)
+
+set(CMAKE_CURRENT_SOURCE_DIR "@CMAKE_CURRENT_SOURCE_DIR@")
+set(CMAKE_CURRENT_BINARY_DIR "@CMAKE_CURRENT_BINARY_DIR@")
+set(CMAKE_INSTALL_DATAROOTDIR "@CMAKE_INSTALL_DATAROOTDIR@")
+set(PROJECT_NAME "@PROJECT_NAME@")
+include("@CMAKE_CURRENT_SOURCE_DIR@/cmake/RenderReadme.cmake")
+foreach(layout install-doc archive-doc archive-root)
+    contactglove_render_readmes("${layout}" "@CMAKE_CURRENT_BINARY_DIR@/readmes/${layout}")
+endforeach()
