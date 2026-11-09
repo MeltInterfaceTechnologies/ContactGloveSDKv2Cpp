@@ -12,6 +12,8 @@ Receive ContactGlove3 Pro data from DivingStation over OSC. The SDK offers polli
 
 ## Installation
 
+Download prebuilt SDK packages from the [latest GitHub Release](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/releases/latest). The release includes Windows, Linux and macOS archives, Ubuntu DEB packages, and `SHA256SUMS.txt`. Ubuntu users can also install through APT as described below.
+
 ### Ubuntu 22.04 / 24.04, amd64: APT
 
 For `jammy` or `noble`, obtain `contactglove-archive.asc` from the distributor. In the directory containing it, inspect the primary key fingerprint and confirm it is `DCBF 1BD7 8F31 3033 7506 DDF6 CC4A 11F6 725F 5132` before registering the key. Follow the [SDK guide](https://docs.melt-interface-technologies.com/en/docs/contact/sdks/contact-glove-v2-native) for the complete setup.
@@ -55,7 +57,17 @@ sudo apt-get install --only-upgrade contactglove-sdk-v2
 
 ### Archives and direct DEB
 
-Choose the distribution for your OS and CPU. Replace `<version>` with the filename's version. Extract ZIP/TGZ and use the extracted directory as the SDK root.
+Open the [latest GitHub Release](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/releases/latest) and choose an asset for your OS and CPU:
+
+- Windows 11 x64: `ContactGloveSDKv2Cpp-<version>-Windows-AMD64.zip`
+- Linux x86_64: `ContactGloveSDKv2Cpp-<version>-Linux-x86_64.tar.gz`
+- macOS 13+ (Apple Silicon / Intel): `ContactGloveSDKv2Cpp-<version>-macOS-universal.tar.gz`
+- Ubuntu 22.04 amd64: `contactglove-sdk-v2_<version>-0jammy_amd64.deb`
+- Ubuntu 24.04 amd64: `contactglove-sdk-v2_<version>-0noble_amd64.deb`
+
+Download `SHA256SUMS.txt` from the same release and verify the selected file's SHA-256 checksum before installing. GitHub's automatically generated **Source code** archives do not contain the prebuilt SDK.
+
+Replace `<version>` with the downloaded filename's version. Extract ZIP/TGZ and use the extracted directory as the SDK root.
 
 Windows x64 ZIP:
 
@@ -82,7 +94,7 @@ sudo apt install ./contactglove-sdk-v2_*.deb
 ```
 
 <!-- BEGIN SOURCE-ONLY -->
-To build and install the SDK from source, see the [build guide](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/blob/main/docs/BUILD.md). Repository links require access while the repository is private.
+To build and install the SDK from source, see the [build guide](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/blob/main/docs/BUILD.md).
 <!-- END SOURCE-ONLY -->
 
 ## Run the bundled sample

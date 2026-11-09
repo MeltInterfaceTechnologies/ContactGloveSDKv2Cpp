@@ -12,6 +12,8 @@ DivingStationからContactGlove3 ProのデータをOSCで受信するSDKです�
 
 ## インストール
 
+ビルド済みSDKは[最新のGitHub Release](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/releases/latest)からダウンロードできます。Windows・Linux・macOS向けアーカイブ、Ubuntu向けDEB、`SHA256SUMS.txt`を配布しています。Ubuntuでは、以下のAPTによるインストールも利用できます。
+
 ### Ubuntu 22.04 / 24.04、amd64: APT
 
 `jammy` または `noble` 向けです。配布元から `contactglove-archive.asc` を取得し、保存したフォルダで主鍵のfingerprintを確認します。値が `DCBF 1BD7 8F31 3033 7506 DDF6 CC4A 11F6 725F 5132` と一致することを確認してから鍵を登録してください。詳しくは[SDKガイド](https://docs.melt-interface-technologies.com/ja/docs/contact/sdks/contact-glove-v2-native)を参照してください。
@@ -55,7 +57,17 @@ sudo apt-get install --only-upgrade contactglove-sdk-v2
 
 ### アーカイブとDEBの直接インストール
 
-OS・CPUに合う配布物を選び、`<version>` をファイル名のバージョンに置き換えてください。ZIP/TGZは展開先をSDKルートとして使います。
+[最新のGitHub Release](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/releases/latest)のAssetsから、OS・CPUに合うファイルを選んでください。
+
+- Windows 11 x64: `ContactGloveSDKv2Cpp-<version>-Windows-AMD64.zip`
+- Linux x86_64: `ContactGloveSDKv2Cpp-<version>-Linux-x86_64.tar.gz`
+- macOS 13以降（Apple Silicon / Intel）: `ContactGloveSDKv2Cpp-<version>-macOS-universal.tar.gz`
+- Ubuntu 22.04 amd64: `contactglove-sdk-v2_<version>-0jammy_amd64.deb`
+- Ubuntu 24.04 amd64: `contactglove-sdk-v2_<version>-0noble_amd64.deb`
+
+同じReleaseの`SHA256SUMS.txt`も取得し、インストール前にダウンロードしたファイルのSHA-256チェックサムを確認してください。GitHubが自動生成する **Source code** アーカイブには、ビルド済みSDKは含まれません。
+
+`<version>`をダウンロードしたファイル名のバージョンに置き換えてください。ZIP/TGZは展開先をSDKルートとして使います。
 
 Windows x64 ZIP:
 
@@ -82,7 +94,7 @@ sudo apt install ./contactglove-sdk-v2_*.deb
 ```
 
 <!-- BEGIN SOURCE-ONLY -->
-SDKをソースからビルド・インストールするには[ビルドガイド](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/blob/main/docs/BUILD_JA.md)を参照してください。リポジトリが非公開の間はリポジトリへのアクセス権が必要です。
+SDKをソースからビルド・インストールするには[ビルドガイド](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/blob/main/docs/BUILD_JA.md)を参照してください。
 <!-- END SOURCE-ONLY -->
 
 ## 同梱サンプルの実行
