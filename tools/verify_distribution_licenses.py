@@ -63,7 +63,8 @@ def verify(path):
         for required in (base + other, url, url + "/api", contact, "C++17", "x86_64",
                          "macOS 13", "contactglove-basic-usage", "sudo apt-get update",
                          "sudo apt-get install contactglove-sdk-v2",
-                         "DCBF 1BD7 8F31 3033 7506 DDF6 CC4A 11F6 725F 5132",
+                         f"https://docs.melt-interface-technologies.com/{locale}/docs/contact/sdks/apt-repository",
+                         url + ("#install-from-apt" if locale == "en" else "#aptからインストールする"),
                          "https://apt.melt-interface-technologies.com/ubuntu"):
             if required not in source:
                 raise ValueError(f"missing setup requirement in {filename}: {required}")

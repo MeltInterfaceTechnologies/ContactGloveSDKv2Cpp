@@ -12,50 +12,28 @@ DivingStationからContactGlove3 ProのデータをOSCで受信するSDKです�
 
 ## インストール
 
-ビルド済みSDKは[最新のGitHub Release](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/releases/latest)からダウンロードできます。Windows・Linux・macOS向けアーカイブ、Ubuntu向けDEB、`SHA256SUMS.txt`を配布しています。Ubuntuでは、以下のAPTによるインストールも利用できます。
+Ubuntu 22.04 / 24.04のamd64環境では、APTからインストールしてください。Windows・macOS・その他の対応するLinux環境では、[最新のGitHub Release](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/releases/latest)から圧縮ファイルをダウンロードします。以下では、APT、圧縮ファイルとDEBの直接インストールの順に説明します。
 
-### Ubuntu 22.04 / 24.04、amd64: APT
+### APTからインストールする
 
-`jammy` または `noble` 向けです。配布元から `contactglove-archive.asc` を取得し、保存したフォルダで主鍵のfingerprintを確認します。値が `DCBF 1BD7 8F31 3033 7506 DDF6 CC4A 11F6 725F 5132` と一致することを確認してから鍵を登録してください。詳しくは[SDKガイド](https://docs.melt-interface-technologies.com/ja/docs/contact/sdks/contact-glove-v2-native)を参照してください。
+APTリポジトリはUbuntu 22.04（`jammy`）・24.04（`noble`）の `amd64` に対応しています。初めて利用する環境では、[共通APT設定ガイド](https://docs.melt-interface-technologies.com/ja/docs/contact/sdks/apt-repository)に従って設定してください。設定済みの環境では、初回設定は不要です。
+
+設定後、パッケージ一覧を更新し、インストール候補のバージョンの配信元が `https://apt.melt-interface-technologies.com/ubuntu` であることを確認します。
 
 ```sh
-sudo apt-get update
-sudo apt-get install ca-certificates gnupg
-gpg --show-keys --with-fingerprint ./contactglove-archive.asc
+sudo apt-get update &&
+apt-cache policy contactglove-sdk-v2
 ```
 
-```sh
-sudo install -d -m 0755 /etc/apt/keyrings
-gpg --dearmor --output contactglove-archive.gpg ./contactglove-archive.asc
-sudo install -m 0644 contactglove-archive.gpg /etc/apt/keyrings/contactglove-archive.gpg
-. /etc/os-release
-echo "$VERSION_CODENAME"
-dpkg --print-architecture
-```
-
-sourceを追加する前に、`VERSION_CODENAME` が `jammy` または `noble`、アーキテクチャが `amd64` であることを確認してください。
+一覧の更新が成功し、候補が正しいことを確認したら、SDKをインストールします。
 
 ```sh
-cat <<EOF | sudo tee /etc/apt/sources.list.d/contactglove.sources > /dev/null
-Types: deb
-URIs: https://apt.melt-interface-technologies.com/ubuntu
-Suites: ${VERSION_CODENAME}
-Components: main
-Architectures: amd64
-Signed-By: /etc/apt/keyrings/contactglove-archive.gpg
-EOF
-sudo apt-get update
 sudo apt-get install contactglove-sdk-v2
 ```
 
-設定後の更新:
+更新手順と注意点は、[SDKのAPTガイド](https://docs.melt-interface-technologies.com/ja/docs/contact/sdks/contact-glove-v2-native#aptからインストールする)を参照してください。ROS 2のZIPとAPTのパッケージを混在させないでください。
 
-```sh
-sudo apt-get update
-sudo apt-get install --only-upgrade contactglove-sdk-v2
-```
-
-### アーカイブとDEBの直接インストール
+### 圧縮ファイルまたはDEBからインストールする
 
 [最新のGitHub Release](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/releases/latest)のAssetsから、OS・CPUに合うファイルを選んでください。
 

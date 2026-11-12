@@ -12,50 +12,28 @@ Receive ContactGlove3 Pro data from DivingStation over OSC. The SDK offers polli
 
 ## Installation
 
-Download prebuilt SDK packages from the [latest GitHub Release](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/releases/latest). The release includes Windows, Linux and macOS archives, Ubuntu DEB packages, and `SHA256SUMS.txt`. Ubuntu users can also install through APT as described below.
+On Ubuntu 22.04 / 24.04 amd64, install through APT. For Windows, macOS and other supported Linux environments, download an archive from the [latest GitHub Release](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/releases/latest). The following sections cover APT first, then archives and direct DEB installation.
 
-### Ubuntu 22.04 / 24.04, amd64: APT
+### Install from APT
 
-For `jammy` or `noble`, obtain `contactglove-archive.asc` from the distributor. In the directory containing it, inspect the primary key fingerprint and confirm it is `DCBF 1BD7 8F31 3033 7506 DDF6 CC4A 11F6 725F 5132` before registering the key. Follow the [SDK guide](https://docs.melt-interface-technologies.com/en/docs/contact/sdks/contact-glove-v2-native) for the complete setup.
+The APT repository supports Ubuntu 22.04 (`jammy`) and 24.04 (`noble`) on `amd64`. Before the first installation, follow the shared [APT setup guide](https://docs.melt-interface-technologies.com/en/docs/contact/sdks/apt-repository). If the repository is already configured on this system, skip the initial setup.
+
+After setup, update the package index and check that the candidate package comes from `https://apt.melt-interface-technologies.com/ubuntu`:
 
 ```sh
-sudo apt-get update
-sudo apt-get install ca-certificates gnupg
-gpg --show-keys --with-fingerprint ./contactglove-archive.asc
+sudo apt-get update &&
+apt-cache policy contactglove-sdk-v2
 ```
 
-```sh
-sudo install -d -m 0755 /etc/apt/keyrings
-gpg --dearmor --output contactglove-archive.gpg ./contactglove-archive.asc
-sudo install -m 0644 contactglove-archive.gpg /etc/apt/keyrings/contactglove-archive.gpg
-. /etc/os-release
-echo "$VERSION_CODENAME"
-dpkg --print-architecture
-```
-
-Before adding the source, confirm `VERSION_CODENAME` is `jammy` or `noble` and the architecture is `amd64`.
+If the update succeeds and the candidate is correct, install the SDK:
 
 ```sh
-cat <<EOF | sudo tee /etc/apt/sources.list.d/contactglove.sources > /dev/null
-Types: deb
-URIs: https://apt.melt-interface-technologies.com/ubuntu
-Suites: ${VERSION_CODENAME}
-Components: main
-Architectures: amd64
-Signed-By: /etc/apt/keyrings/contactglove-archive.gpg
-EOF
-sudo apt-get update
 sudo apt-get install contactglove-sdk-v2
 ```
 
-To upgrade after setup:
+For updates and precautions, see the [SDK's APT guide](https://docs.melt-interface-technologies.com/en/docs/contact/sdks/contact-glove-v2-native#install-from-apt). Do not mix packages from the ROS 2 ZIP and APT installation routes.
 
-```sh
-sudo apt-get update
-sudo apt-get install --only-upgrade contactglove-sdk-v2
-```
-
-### Archives and direct DEB
+### Install from an archive or direct DEB
 
 Open the [latest GitHub Release](https://github.com/MeltInterfaceTechnologies/ContactGloveSDKv2Cpp/releases/latest) and choose an asset for your OS and CPU:
 
